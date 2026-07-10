@@ -1,0 +1,8 @@
+package {package};
+
+import {fqn.dto};
+
+public interface {Feature}UseCase {
+
+    {class.dto} execute({class.dto} request);
+}

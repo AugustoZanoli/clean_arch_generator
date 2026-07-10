@@ -1,0 +1,13 @@
+package {package};
+
+import {fqn.useCase};
+import {fqn.dto};
+
+public class {Feature}UseCaseImpl implements {class.useCase} {
+
+    @Override
+    public {class.dto} execute({class.dto} request) {
+        // TODO: implementar a regra de negócio de {Feature}
+        return request;
+    }
+}

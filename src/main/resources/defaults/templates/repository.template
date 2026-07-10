@@ -1,0 +1,10 @@
+package {package};
+
+import {fqn.entity};
+
+public interface {Feature}Repository {
+
+    {class.entity} save({class.entity} entity);
+
+    {class.entity} findById(Long id);
+}

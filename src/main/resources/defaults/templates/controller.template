@@ -1,0 +1,17 @@
+package {package};
+
+import {fqn.useCase};
+import {fqn.dto};
+
+public class {Feature}Controller {
+
+    private final {class.useCase} {feature}UseCase;
+
+    public {Feature}Controller({class.useCase} {feature}UseCase) {
+        this.{feature}UseCase = {feature}UseCase;
+    }
+
+    public {class.dto} handle({class.dto} request) {
+        return {feature}UseCase.execute(request);
+    }
+}
