@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "architectureRoot": "",
+  "slots": [
+    {
+      "id": "dto",
+      "folder": "domain/models",
+      "fileName": "{Feature}Dto",
+      "extension": "java",
+      "template": "dto",
+      "enabledByDefault": true
+    },
+    {
+      "id": "useCase",
+      "folder": "domain/useCases",
+      "fileName": "{Feature}UseCase",
+      "extension": "java",
+      "template": "usecase",
+      "enabledByDefault": true
+    },
+    {
+      "id": "useCaseImpl",
+      "folder": "application",
+      "fileName": "{Feature}UseCaseImpl",
+      "extension": "java",
+      "template": "usecaseImpl",
+      "enabledByDefault": true
+    },
+    {
+      "id": "controller",
+      "folder": "infrastructure/controller",
+      "fileName": "{Feature}Controller",
+      "extension": "java",
+      "template": "controller",
+      "enabledByDefault": true
+    },
+    {
+      "id": "entity",
+      "folder": "infrastructure/persistence/entitys",
+      "fileName": "{Feature}Entity",
+      "extension": "java",
+      "template": "entity",
+      "enabledByDefault": true
+    },
+    {
+      "id": "repository",
+      "folder": "infrastructure/repository",
+      "fileName": "{Feature}Repository",
+      "extension": "java",
+      "template": "repository",
+      "enabledByDefault": true
+    }
+  ]
+}
