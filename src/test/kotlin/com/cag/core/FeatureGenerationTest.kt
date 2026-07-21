@@ -16,12 +16,12 @@ class FeatureGenerationTest : BasePlatformTestCase() {
 
         val plan = PlanBuilder(project).build("Assinante", config, arch)
 
-        assertEquals(6, plan.files.size)
+        assertEquals(9, plan.files.size)
 
-        val dto = plan.files.first { it.slot.id == "dto" }
-        assertEquals("AssinanteDto.java", dto.fileName)
-        assertTrue(dto.packageName.endsWith("domain.models"))
-        assertTrue(dto.content.contains("class AssinanteDto"))
+        val model = plan.files.first { it.slot.id == "model" }
+        assertEquals("Assinante.java", model.fileName)
+        assertTrue(model.packageName.endsWith("domain.model"))
+        assertTrue(model.content.contains("class Assinante"))
 
         val impl = plan.files.first { it.slot.id == "useCaseImpl" }
         assertTrue(impl.content.contains("class AssinanteUseCaseImpl implements AssinanteUseCase"))
@@ -38,7 +38,7 @@ class FeatureGenerationTest : BasePlatformTestCase() {
 
         val created = FeatureGenerator(project).generate(plan)
 
-        assertEquals(6, created.size)
+        assertEquals(9, created.size)
         val implFile = created.first { it.name == "AssinanteUseCaseImpl.java" }
         val text = String(implFile.contentsToByteArray(), implFile.charset)
         assertTrue(text.contains("class AssinanteUseCaseImpl"))
@@ -49,5 +49,24 @@ class FeatureGenerationTest : BasePlatformTestCase() {
         val plan2 = PlanBuilder(project).build("Assinante", config, arch2)
         assertTrue("arquivos existentes deveriam ser detectados", plan2.files.all { it.alreadyExists })
         assertEquals(0, FeatureGenerator(project).generate(plan2).size)
+    }
+
+    fun testResolveWithSelectedModule() {
+        // Usa o source root do fixture de teste como "módulo"
+        val sourceRoot = project.baseDir
+        val config = CagConfigService.defaultConfig()
+
+        // Resolve sem módulo explícito
+        val arch1 = ArchitectureResolver(project).resolve(config, null, null)
+        assertNotNull("Deve resolver sem módulo explícito", arch1)
+
+        // Resolve com o source root como módulo (deve funcionar igual)
+        val arch2 = ArchitectureResolver(project).resolve(config, null, sourceRoot)
+        assertNotNull("Deve resolver com source root como módulo", arch2)
+
+        // Ambos devem gerar o mesmo número de arquivos
+        val plan1 = PlanBuilder(project).build("Teste", config, arch1!!)
+        val plan2 = PlanBuilder(project).build("Teste", config, arch2!!)
+        assertEquals(plan1.files.size, plan2.files.size)
     }
 }

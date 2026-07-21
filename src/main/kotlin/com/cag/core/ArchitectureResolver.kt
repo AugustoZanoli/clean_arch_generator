@@ -36,18 +36,48 @@ class ArchitectureResolver(private val project: Project) {
     /**
      * @param context arquivo/diretório de referência (ex.: seleção no Project View) usado para
      *                escolher o source root/módulo mais apropriado; pode ser nulo.
+     * @param selectedModule módulo selecionado pelo usuário (ComboBox); pode ser um source root
+     *                       ou um subdiretório dentro do source root (ex.: empresa, fundo).
+     * @param featureName nome da feature (snake_case) para substituir {feature} nas pastas.
      */
-    fun resolve(config: CagConfig, context: VirtualFile? = null): ResolvedArchitecture? {
-        val sourceRoot = pickSourceRoot(context) ?: return null
+    fun resolve(config: CagConfig, context: VirtualFile? = null, selectedModule: VirtualFile? = null, featureName: String = ""): ResolvedArchitecture? {
+        // Encontra o source root que contém o módulo selecionado
+        val sourceRoot = findSourceRootForModule(selectedModule) ?: pickSourceRoot(context) ?: return null
 
-        val archRelPath = architectureRelPath(config, sourceRoot)
-        val basePackage = archRelPath.toPackage()
+        // Se um módulo foi selecionado e não é o próprio source root, usa ele como base
+        val baseDir = if (selectedModule != null && selectedModule != sourceRoot) {
+            selectedModule
+        } else {
+            // Selecione o architecture root apenas quando não há módulo explícito
+            val archRelPath = architectureRelPath(config, sourceRoot)
+            if (archRelPath.isNotEmpty()) {
+                sourceRoot.findFileByRelativePath(archRelPath) ?: sourceRoot
+            } else {
+                sourceRoot
+            }
+        }
+
+        val basePackage = relativePath(sourceRoot, baseDir).toPackage()
 
         val slots = config.slots.map { slot ->
-            val relSegments = (archRelPath.splitPath() + slot.folder.splitPath())
+            val resolvedFolder = slot.folder.replace("{feature}", featureName)
+            val relSegments = (relativePath(sourceRoot, baseDir).splitPath() + resolvedFolder.splitPath())
             resolveSlot(slot, sourceRoot, relSegments)
         }
         return ResolvedArchitecture(sourceRoot, basePackage, slots)
+    }
+
+    /** Encontra o source root que contém o módulo selecionado. */
+    private fun findSourceRootForModule(module: VirtualFile?): VirtualFile? {
+        if (module == null) return null
+        val rootManager = ProjectRootManager.getInstance(project)
+        val sourceRoots = rootManager.contentSourceRoots.toList()
+
+        // Se o módulo é um source root, retorna ele mesmo
+        if (sourceRoots.any { it.path == module.path }) return module
+
+        // Senão, encontra o source root ancestral do módulo
+        return sourceRoots.firstOrNull { isAncestor(it, module) }
     }
 
     private fun resolveSlot(
@@ -109,6 +139,53 @@ class ArchitectureResolver(private val project: Project) {
         }
     }
 
+    /**
+     * Retorna os módulos disponíveis para seleção no ComboBox.
+     * Para projetos com submódulos (ex.: empresa, fundo dentro de com.dealguard.cessao),
+     * retorna os subdiretórios do base package como módulos.
+     * Para projetos multi-Maven, retorna os source roots de produção.
+     */
+    fun availableModules(): List<VirtualFile> {
+        val rootManager = ProjectRootManager.getInstance(project)
+        val sourceRoots = rootManager.contentSourceRoots.toList()
+            .filter { !it.path.contains("/test") && !it.path.contains("generated") }
+
+        // Para cada source root, desce pela cadeia de diretório único e coleta subdiretórios
+        // que representam módulos (pastas que NÃO são package padrão como com, org, etc.)
+        val modules = mutableListOf<VirtualFile>()
+        val standardPackages = setOf("com", "org", "net", "io", "br", "java", "javax", "kotlin")
+
+        for (root in sourceRoots) {
+            var dir = root
+            // Desce pela cadeia de diretório único até achar múltiplos subdiretórios
+            while (true) {
+                val children = dir.children?.filter { it.isDirectory && !it.name.startsWith(".") } ?: emptyList()
+                if (children.size == 1) {
+                    dir = children[0]
+                } else {
+                    // Achou múltiplos subdiretórios - estes são os módulos
+                    val moduleDirs = children.filter { child ->
+                        !standardPackages.contains(child.name.lowercase())
+                    }
+                    if (moduleDirs.isNotEmpty()) {
+                        modules.addAll(moduleDirs.sortedBy { it.name })
+                    } else {
+                        // Se todos são packages padrão, usa o source root
+                        modules.add(root)
+                    }
+                    break
+                }
+            }
+        }
+
+        // Se não encontrou módulos, retorna os source roots como fallback
+        if (modules.isEmpty()) {
+            return sourceRoots.sortedBy { it.name }
+        }
+
+        return modules.distinctBy { it.path }.sortedBy { it.name }
+    }
+
     private fun pickSourceRoot(context: VirtualFile?): VirtualFile? {
         val rootManager = ProjectRootManager.getInstance(project)
         val sourceRoots = rootManager.contentSourceRoots.toList()
@@ -123,15 +200,6 @@ class ArchitectureResolver(private val project: Project) {
 
         // Fallback: raiz de conteúdo ou base do projeto.
         return rootManager.contentRoots.firstOrNull()
-    }
-
-    private fun isAncestor(ancestor: VirtualFile, child: VirtualFile): Boolean {
-        var cur: VirtualFile? = child
-        while (cur != null) {
-            if (cur == ancestor) return true
-            cur = cur.parent
-        }
-        return false
     }
 
     private fun relativePath(root: VirtualFile, descendant: VirtualFile): String {

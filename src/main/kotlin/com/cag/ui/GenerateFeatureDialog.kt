@@ -3,9 +3,11 @@ package com.cag.ui
 import com.cag.config.CagConfigService
 import com.cag.core.ArchitectureResolver
 import com.cag.core.FeaturePlan
+import com.cag.core.NameVariants
 import com.cag.core.FeatureGenerator
 import com.cag.core.PlanBuilder
 import com.cag.core.PlannedFile
+import com.cag.core.isAncestor
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
@@ -13,7 +15,9 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.CheckboxTree
 import com.intellij.ui.CheckboxTreeBase
+import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.CheckedTreeNode
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBLabel
@@ -37,6 +41,7 @@ class GenerateFeatureDialog(
 ) : DialogWrapper(project) {
 
     private val nameField = JBTextField()
+    private val moduleField = ComboBox<VirtualFile>()
     private val statusLabel = JBLabel(" ")
     private val rootNode = CheckedTreeNode("root")
     private val tree = CheckboxTree(
@@ -55,6 +60,22 @@ class GenerateFeatureDialog(
         nameField.document.addDocumentListener(object : DocumentAdapter() {
             override fun textChanged(e: DocumentEvent) = refreshPreview()
         })
+        moduleField.renderer = object : SimpleListCellRenderer<VirtualFile>() {
+            override fun customize(
+                list: javax.swing.JList<out VirtualFile>,
+                value: VirtualFile?,
+                index: Int,
+                selected: Boolean,
+                hasFocus: Boolean,
+            ) {
+                if (value != null) {
+                    text = value.name
+                    toolTipText = value.path
+                }
+            }
+        }
+        populateModuleComboBox()
+        moduleField.addActionListener { refreshPreview() }
         init()
         refreshPreview()
     }
@@ -62,9 +83,19 @@ class GenerateFeatureDialog(
     override fun getPreferredFocusedComponent(): JComponent = nameField
 
     override fun createCenterPanel(): JComponent {
-        val north = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
+        val moduleRow = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
+            add(JBLabel("Módulo:"), BorderLayout.WEST)
+            add(moduleField, BorderLayout.CENTER)
+        }
+
+        val featureRow = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
             add(JBLabel("Nome da feature:"), BorderLayout.WEST)
             add(nameField, BorderLayout.CENTER)
+        }
+
+        val north = JPanel(BorderLayout(0, JBUI.scale(4))).apply {
+            add(moduleRow, BorderLayout.NORTH)
+            add(featureRow, BorderLayout.SOUTH)
         }
 
         val scroll = com.intellij.ui.ScrollPaneFactory.createScrollPane(tree).apply {
@@ -100,8 +131,25 @@ class GenerateFeatureDialog(
         val raw = nameField.text
         if (raw.isBlank()) return null
         val config = CagConfigService.getInstance(project).getConfig()
-        val arch = ArchitectureResolver(project).resolve(config, context) ?: return null
+        val resolver = ArchitectureResolver(project)
+        val selectedModule = moduleField.selectedItem as? VirtualFile
+        val featureSnake = NameVariants(raw).snake
+        val arch = resolver.resolve(config, context, selectedModule, featureSnake) ?: return null
         return PlanBuilder(project).build(raw, config, arch)
+    }
+
+    private fun populateModuleComboBox() {
+        val resolver = ArchitectureResolver(project)
+        val modules = resolver.availableModules()
+        moduleField.removeAllItems()
+        modules.forEach { moduleField.addItem(it) }
+        // Pré-seleciona o módulo mais próximo do contexto, ou o primeiro
+        if (context != null) {
+            val match = modules.firstOrNull { it.path == context.path }
+                ?: modules.firstOrNull { isAncestor(it, context) }
+                ?: modules.firstOrNull { context.path.contains(it.path) }
+            if (match != null) moduleField.selectedItem = match
+        }
     }
 
     private fun rebuildTree(plan: FeaturePlan?) {

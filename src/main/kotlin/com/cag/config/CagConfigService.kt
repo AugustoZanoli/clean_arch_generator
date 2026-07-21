@@ -83,12 +83,15 @@ class CagConfigService(private val project: Project) {
             version = 1,
             architectureRoot = "",
             slots = mutableListOf(
-                SlotConfig("dto", "domain/models", "{Feature}Dto", "java", "dto"),
-                SlotConfig("useCase", "domain/useCases", "{Feature}UseCase", "java", "usecase"),
-                SlotConfig("useCaseImpl", "application", "{Feature}UseCaseImpl", "java", "usecaseImpl"),
-                SlotConfig("controller", "infrastructure/controller", "{Feature}Controller", "java", "controller"),
-                SlotConfig("entity", "infrastructure/persistence/entitys", "{Feature}Entity", "java", "entity"),
-                SlotConfig("repository", "infrastructure/repository", "{Feature}Repository", "java", "repository"),
+                SlotConfig("model", "domain/model", "{Feature}", "java", "model"),
+                SlotConfig("useCase", "domain/ports/usecase/{feature}", "{Feature}UseCase", "java", "usecase"),
+                SlotConfig("useCaseImpl", "application/usecase/{feature}", "{Feature}UseCaseImpl", "java", "usecaseImpl"),
+                SlotConfig("controller", "infrastructure/adapter/controller", "{Feature}Controller", "java", "controller"),
+                SlotConfig("repository", "domain/ports/persistence", "{Feature}Repository", "java", "repository"),
+                SlotConfig("repositoryImpl", "infrastructure/persistence", "{Feature}RepositoryImpl", "java", "repositoryImpl"),
+                SlotConfig("entity", "infrastructure/persistence/entity", "{Feature}Entity", "java", "entity"),
+                SlotConfig("dto", "infrastructure/adapter/dto", "{Feature}Dto", "java", "dto"),
+                SlotConfig("mapper", "infrastructure/mapper", "{Feature}Mapper", "java", "mapper"),
             ),
         )
     }
