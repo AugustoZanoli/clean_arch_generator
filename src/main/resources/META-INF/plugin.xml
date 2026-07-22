@@ -1,13 +1,26 @@
 <idea-plugin>
     <id>com.cag.cag</id>
-    <name>Cag — Clean Architecture Generator</name>
+    <name>Cag (Clean Architecture Generator)</name>
     <vendor email="augusto.zanoli@gmail.com">Augusto Zanoli</vendor>
 
     <description><![CDATA[
-        Gera os arquivos de uma nova feature seguindo a arquitetura (Clean Architecture) definida
-        no arquivo <code>.cag/config.json</code> do projeto.<br>
-        Abra a janela pelo atalho <b>Ctrl+Alt+Shift+N</b>, digite o nome da feature e confirme os
-        arquivos no preview — eles são criados nas pastas certas, com package e imports resolvidos.
+        Gere automaticamente os arquivos de uma nova feature seguindo os princípios de Clean Architecture.<br><br>
+
+        O plugin lê a configuração definida no arquivo <code>.cag/config.json</code> do projeto e cria
+        todos os arquivos necessários — models, repositories, use cases, controllers e demais camadas —
+        nas pastas corretas, com packages e imports já resolvidos.<br><br>
+
+        <b>Como utilizar:</b><br>
+        1. Configure a arquitetura no arquivo <code>.cag/config.json</code> na raiz do projeto<br>
+        2. Pressione <b>Ctrl+Alt+Shift+N</b> ou acesse via menu <i>Tools</i><br>
+        3. Digite o nome da feature e confirme os arquivos no preview<br><br>
+
+        <b>Recursos:</b><br>
+        • Suporte a projetos multi-módulo<br>
+        • Preview interativo antes da geração<br>
+        • Templates customizáveis por projeto<br>
+        • Resolução automática de packages e imports<br>
+        • Compatível com Kotlin 2 (K2)
         ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
@@ -31,8 +44,8 @@
     <actions>
         <action id="com.cag.GenerateFeature"
                 class="com.cag.ui.GenerateFeatureAction"
-                text="Gerar Feature (Clean Architecture)…"
-                description="Cria os arquivos de uma nova feature seguindo a arquitetura definida"
+                text="Generate Feature (Clean Architecture)…"
+                description="Generate feature files following Clean Architecture conventions"
                 icon="AllIcons.General.Add">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>

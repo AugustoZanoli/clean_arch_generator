@@ -1,25 +1,30 @@
 # Cag — Clean Architecture Generator
 
-Um plugin para IntelliJ IDEA que gera os arquivos de uma nova feature seguindo a arquitetura Clean Architecture definida no arquivo `.cag/config.json` do projeto.
+Plugin para IntelliJ IDEA que gera automaticamente os arquivos de uma nova feature seguindo os princípios de Clean Architecture, com base na configuração definida no projeto.
 
 ## Funcionalidades
 
-- Gera arquivos de uma feature seguindo a arquitetura definida
-- Suporte a projetos multi-módulo
-- Preview interativo antes da geração
+- Geração automática de arquivos por camada (domain, data, presentation, etc.)
+- Suporte a projetos multi-módulo com seleção de módulo de destino
+- Preview interativo dos arquivos antes da geração
 - Templates customizáveis por projeto
 - Resolução automática de packages e imports
+- Variáveis de template para diferentes convenções de nomenclatura
 
-## Como usar
+## Instalação
 
-1. Instale o plugin do JetBrains Marketplace
-2. Configure a arquitetura no arquivo `.cag/config.json` na raiz do projeto
-3. Use o atalho `Ctrl+Alt+Shift+N` ou acesse via menu Tools
-4. Digite o nome da feature e confirme os arquivos no preview
+Instale diretamente do [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/cag-clean-architecture-generator).
+
+## Uso
+
+1. Configure a arquitetura no arquivo `.cag/config.json` na raiz do projeto
+2. Pressione `Ctrl+Alt+Shift+N` ou acesse via menu *Tools*
+3. Digite o nome da feature
+4. Revise os arquivos no preview e confirme a geração
 
 ## Configuração
 
-O arquivo `.cag/config.json` define a arquitetura do projeto:
+O arquivo `.cag/config.json` define a arquitetura do projeto. Cada *slot* representa uma camada ou arquivo que será gerado:
 
 ```json
 {

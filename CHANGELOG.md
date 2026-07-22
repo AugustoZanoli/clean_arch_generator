@@ -4,15 +4,14 @@
 
 ## [Unreleased]
 
-## [1.2.0]
-### Changed
-- Removido código morto e imports não utilizados
-- Removido template boilerplate de arquivos de configuração
-- Eliminada duplicação do método isAncestor
-- README substituído por documentação própria do plugin
-- Vendor URL corrigida no plugin.xml
-
-## [1.1.0]
+## [1.0.0]
 ### Added
-- Suporte a projetos multi-módulo: ComboBox de seleção de módulo na janela de geração
-- O usuário pode escolher em qual módulo/source root gerar os arquivos
+- Geração automática de arquivos seguindo Clean Architecture
+- Suporte a projetos multi-módulo com seleção de módulo
+- Preview interativo antes da geração dos arquivos
+- Templates customizáveis via `.cag/templates/`
+- Resolução automática de packages e imports
+- Variáveis de template (PascalCase, camelCase, snake_case, kebab-case, UPPER_SNAKE)
+- Referências cruzadas entre slots via `{fqn.<id>}`, `{class.<id>}`, `{package.<id>}`
+- Configuração centralizada em `.cag/config.json`
+- Compatível com Kotlin 2 (K2)
