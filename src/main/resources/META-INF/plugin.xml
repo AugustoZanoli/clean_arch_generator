@@ -24,6 +24,10 @@
         <supportsKotlinPluginMode supportsK2="true" />
     </extensions>
 
+    <extensions defaultExtensionNs="com.intellij">
+        <postStartupActivity implementation="com.cag.config.CagConfigInitializer"/>
+    </extensions>
+
     <actions>
         <action id="com.cag.GenerateFeature"
                 class="com.cag.ui.GenerateFeatureAction"

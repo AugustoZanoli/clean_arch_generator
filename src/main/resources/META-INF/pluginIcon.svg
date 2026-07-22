@@ -19,10 +19,10 @@
   <polygon points="64,58 100,38 100,90 64,110" fill="#5B47C8"/>
 
   <!-- C -->
-  <path d="M58 68 L35 55 L35 82 L58 95"
+  <path d="M58 65 L35 52 L35 86 L56 98"
         fill="none"
         stroke="#EDEAFF"
-        stroke-width="7"
+        stroke-width="6"
         stroke-linecap="round"
         stroke-linejoin="round"/>
 </svg>
