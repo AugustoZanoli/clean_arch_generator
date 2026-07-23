@@ -11,7 +11,7 @@ data class PlannedFile(
     /** Nome do arquivo com extensão, ex.: "AssinanteDto.java". */
     val fileName: String,
     val packageName: String,
-    /** Caminho relativo ao source root, para exibição, ex.: "com/empresa/app/domain/models/AssinanteDto.java". */
+    /** Caminho relativo ao source root, para exibição, ex.: "com/perfil/app/domain/models/PerfilDto.java". */
     val relativePath: String,
     val content: String,
     val existingBaseDir: VirtualFile,

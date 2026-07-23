@@ -3,6 +3,7 @@ package com.cag.ui
 import com.cag.config.CagConfigService
 import com.cag.core.ArchitectureResolver
 import com.cag.core.FeaturePlan
+import com.cag.core.ModuleItem
 import com.cag.core.NameVariants
 import com.cag.core.FeatureGenerator
 import com.cag.core.PlanBuilder
@@ -41,7 +42,7 @@ class GenerateFeatureDialog(
 ) : DialogWrapper(project) {
 
     private val nameField = JBTextField()
-    private val moduleField = ComboBox<VirtualFile>()
+    private val moduleField = ComboBox<ModuleItem>()
     private val statusLabel = JBLabel(" ")
     private val rootNode = CheckedTreeNode("root")
     private val tree = CheckboxTree(
@@ -60,17 +61,17 @@ class GenerateFeatureDialog(
         nameField.document.addDocumentListener(object : DocumentAdapter() {
             override fun textChanged(e: DocumentEvent) = refreshPreview()
         })
-        moduleField.renderer = object : SimpleListCellRenderer<VirtualFile>() {
+        moduleField.renderer = object : SimpleListCellRenderer<ModuleItem>() {
             override fun customize(
-                list: javax.swing.JList<out VirtualFile>,
-                value: VirtualFile?,
+                list: javax.swing.JList<out ModuleItem>,
+                value: ModuleItem?,
                 index: Int,
                 selected: Boolean,
                 hasFocus: Boolean,
             ) {
                 if (value != null) {
-                    text = value.name
-                    toolTipText = value.path
+                    text = value.displayName
+                    toolTipText = value.file.path
                 }
             }
         }
@@ -132,7 +133,8 @@ class GenerateFeatureDialog(
         if (raw.isBlank()) return null
         val config = CagConfigService.getInstance(project).getConfig()
         val resolver = ArchitectureResolver(project)
-        val selectedModule = moduleField.selectedItem as? VirtualFile
+        val selectedModuleItem = moduleField.selectedItem as? ModuleItem
+        val selectedModule = selectedModuleItem?.file
         val featureSnake = NameVariants(raw).snake
         val arch = resolver.resolve(config, context, selectedModule, featureSnake) ?: return null
         return PlanBuilder(project).build(raw, config, arch)
@@ -145,9 +147,9 @@ class GenerateFeatureDialog(
         modules.forEach { moduleField.addItem(it) }
         // Pré-seleciona o módulo mais próximo do contexto, ou o primeiro
         if (context != null) {
-            val match = modules.firstOrNull { it.path == context.path }
-                ?: modules.firstOrNull { isAncestor(it, context) }
-                ?: modules.firstOrNull { context.path.contains(it.path) }
+            val match = modules.firstOrNull { it.file.path == context.path }
+                ?: modules.firstOrNull { isAncestor(it.file, context) }
+                ?: modules.firstOrNull { context.path.contains(it.file.path) }
             if (match != null) moduleField.selectedItem = match
         }
     }

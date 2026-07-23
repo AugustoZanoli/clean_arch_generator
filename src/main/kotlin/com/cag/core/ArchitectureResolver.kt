@@ -6,6 +6,15 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
 
+/**
+ * Representa um módulo disponível para seleção no ComboBox.
+ * [file] é o diretório do módulo e [displayName] é o nome exibido (com prefixo do pai se necessário).
+ */
+data class ModuleItem(
+    val file: VirtualFile,
+    val displayName: String,
+)
+
 /** Um slot já resolvido contra a árvore de diretórios real do projeto. */
 data class ResolvedSlot(
     val slot: SlotConfig,
@@ -37,7 +46,7 @@ class ArchitectureResolver(private val project: Project) {
      * @param context arquivo/diretório de referência (ex.: seleção no Project View) usado para
      *                escolher o source root/módulo mais apropriado; pode ser nulo.
      * @param selectedModule módulo selecionado pelo usuário (ComboBox); pode ser um source root
-     *                       ou um subdiretório dentro do source root (ex.: empresa, fundo).
+     *                       ou um subdiretório dentro do source root (ex.: perfil, usuario).
      * @param featureName nome da feature (snake_case) para substituir {feature} nas pastas.
      */
     fun resolve(config: CagConfig, context: VirtualFile? = null, selectedModule: VirtualFile? = null, featureName: String = ""): ResolvedArchitecture? {
@@ -126,7 +135,7 @@ class ArchitectureResolver(private val project: Project) {
     }
 
     /**
-     * Desce por cadeias de diretório único (ex.: com/empresa/app) até achar um diretório que
+     * Desce por cadeias de diretório único (ex.: com/perfil/app) até achar um diretório que
      * contenha alguma das pastas de topo da arquitetura; caso não ache, retorna o ponto onde parou.
      */
     private fun walkDownToArchitecture(sourceRoot: VirtualFile, topFolders: Set<String>): VirtualFile {
@@ -141,11 +150,14 @@ class ArchitectureResolver(private val project: Project) {
 
     /**
      * Retorna os módulos disponíveis para seleção no ComboBox.
-     * Para projetos com submódulos (ex.: empresa, fundo dentro de com.dealguard.cessao),
+     * Para projetos com submódulos (ex.: perfil, usuario dentro de com.exemplo.perfil),
      * retorna os subdiretórios do base package como módulos.
      * Para projetos multi-Maven, retorna os source roots de produção.
+     *
+     * Quando há módulos com nomes iguais em diferentes microsserviços,
+     * o displayName inclui o prefixo do pai (ex.: "ms-perfil/perfil").
      */
-    fun availableModules(): List<VirtualFile> {
+    fun availableModules(): List<ModuleItem> {
         val rootManager = ProjectRootManager.getInstance(project)
         val sourceRoots = rootManager.contentSourceRoots.toList()
             .filter { !it.path.contains("/test") && !it.path.contains("generated") }
@@ -180,10 +192,47 @@ class ArchitectureResolver(private val project: Project) {
 
         // Se não encontrou módulos, retorna os source roots como fallback
         if (modules.isEmpty()) {
-            return sourceRoots.sortedBy { it.name }
+            return sourceRoots.sortedBy { it.name }.map { ModuleItem(it, it.name) }
         }
 
-        return modules.distinctBy { it.path }.sortedBy { it.name }
+        val distinctModules = modules.distinctBy { it.path }.sortedBy { it.name }
+
+        // Verifica se há nomes duplicados e inclui o prefixo do pai quando necessário
+        val nameCounts = distinctModules.groupBy { it.name.lowercase() }
+        val hasDuplicates = nameCounts.any { it.value.size > 1 }
+
+        return if (hasDuplicates) {
+            distinctModules.map { module ->
+                val parentName = findParentModuleName(module)
+                val displayName = if (parentName != null) {
+                    "$parentName/${module.name}"
+                } else {
+                    module.name
+                }
+                ModuleItem(module, displayName)
+            }.sortedBy { it.displayName }
+        } else {
+            distinctModules.map { ModuleItem(it, it.name) }.sortedBy { it.displayName }
+        }
+    }
+
+    /**
+     * Encontra o nome do "microsserviço" pai de um módulo.
+     * Para estruturas como ms-perfil/perfil, retorna "ms-perfil".
+     */
+    private fun findParentModuleName(module: VirtualFile): String? {
+        val parent = module.parent ?: return null
+        val rootManager = ProjectRootManager.getInstance(project)
+        val sourceRoots = rootManager.contentSourceRoots.map { it.path }
+
+        // Se o pai é um source root, não há prefixo
+        if (sourceRoots.any { it == parent.path }) return null
+
+        // Se o pai tem um nome curto (package padrão), não usa como prefixo
+        val standardPackages = setOf("com", "org", "net", "io", "br", "java", "javax", "kotlin")
+        if (standardPackages.contains(parent.name.lowercase())) return null
+
+        return parent.name
     }
 
     private fun pickSourceRoot(context: VirtualFile?): VirtualFile? {
