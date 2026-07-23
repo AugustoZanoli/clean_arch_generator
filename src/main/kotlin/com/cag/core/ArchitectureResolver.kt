@@ -54,7 +54,7 @@ class ArchitectureResolver(private val project: Project) {
 
         val basePackage = relativePath(sourceRoot, baseDir).toPackage()
 
-        val slots = config.slots.map { slot ->
+        val slots = config.flattenSlots().map { slot ->
             val resolvedFolder = slot.folder.replace("{feature}", featureName)
             val relSegments = relativePath(sourceRoot, baseDir).splitPath() + resolvedFolder.splitPath()
             resolveSlot(slot, sourceRoot, relSegments)
@@ -107,7 +107,8 @@ class ArchitectureResolver(private val project: Project) {
         val configured = config.architectureRoot.trim().trim('/')
         if (configured.isNotEmpty()) return configured
 
-        val topFolders = config.slots.mapNotNull { it.folder.splitPath().firstOrNull() }.toSet()
+        // Usar nomes dos módulos para auto-detection
+        val topFolders = config.modules.map { it.name }.toSet()
         val detected = walkDownToArchitecture(sourceRoot, topFolders)
         return relativePath(sourceRoot, detected)
     }

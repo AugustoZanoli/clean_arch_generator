@@ -20,7 +20,8 @@ class FeatureGenerationTest : BasePlatformTestCase() {
 
         val model = plan.files.first { it.slot.id == "model" }
         assertEquals("Assinante.java", model.fileName)
-        assertTrue(model.packageName.endsWith("domain.model"))
+        // O nome do módulo "Domain" no config é case-insensitive; o diretório real pode ser "domain"
+        assertTrue(model.packageName.endsWith("domain.model") || model.packageName.endsWith("Domain.model"))
         assertTrue(model.content.contains("class Assinante"))
 
         val impl = plan.files.first { it.slot.id == "useCaseImpl" }
@@ -68,5 +69,21 @@ class FeatureGenerationTest : BasePlatformTestCase() {
         val plan1 = PlanBuilder(project).build("Teste", config, arch1!!)
         val plan2 = PlanBuilder(project).build("Teste", config, arch2!!)
         assertEquals(plan1.files.size, plan2.files.size)
+    }
+
+    fun testFlattenSlotsReturnsAllSlotsWithModuleName() {
+        val config = CagConfigService.defaultConfig()
+        val flatSlots = config.flattenSlots()
+
+        assertEquals(9, flatSlots.size)
+
+        // Verificar que cada slot tem o moduleName preenchido
+        val modelSlot = flatSlots.first { it.id == "model" }
+        assertEquals("Domain", modelSlot.moduleName)
+        assertEquals("Domain/model", modelSlot.folder)
+
+        val controllerSlot = flatSlots.first { it.id == "controller" }
+        assertEquals("Infrastructure", controllerSlot.moduleName)
+        assertEquals("Infrastructure/controller", controllerSlot.folder)
     }
 }

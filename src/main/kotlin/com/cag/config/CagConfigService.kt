@@ -29,7 +29,6 @@ class CagConfigService(private val project: Project) : Disposable {
     fun checkAndReload() {
         val path = configPath() ?: return
         if (!path.exists()) return
-
         val currentModified = path.toFile().lastModified()
         if (currentModified > lastModified) {
             thisLogger().info("Cag: arquivo de configuração alterado externamente, recarregando...")
@@ -49,9 +48,7 @@ class CagConfigService(private val project: Project) : Disposable {
         }
     }
 
-    fun reload() {
-        cached = null
-    }
+    fun reload() { cached = null }
 
     fun save(config: CagConfig) {
         val path = configPath() ?: run {
@@ -67,9 +64,31 @@ class CagConfigService(private val project: Project) : Disposable {
     private fun load(): CagConfig {
         val path = configPath()
         if (path != null && path.exists()) {
-            runCatching { gson.fromJson(path.readText(), CagConfig::class.java) }
-                .onSuccess { if (it != null) return normalize(it) }
-                .onFailure { thisLogger().warn("Cag: falha ao ler ${path}, usando default.", it) }
+            runCatching {
+                val json = path.readText()
+                val config = gson.fromJson(json, CagConfig::class.java)
+                if (config != null) {
+                    // Detectar formato legado (slots flat)
+                    val jsonObj = gson.fromJson(json, Map::class.java)
+                    if (jsonObj?.containsKey("slots") == true && !jsonObj.containsKey("modules")) {
+                        @Suppress("UNCHECKED_CAST")
+                        val legacySlots = jsonObj["slots"] as? List<Map<String, Any>>
+                        if (legacySlots != null) {
+                            config.legacySlots = legacySlots.map { slotMap ->
+                                SlotConfig(
+                                    id = slotMap["id"] as? String ?: "",
+                                    subfolder = slotMap["folder"] as? String ?: "",
+                                    fileName = slotMap["fileName"] as? String ?: "",
+                                    extension = slotMap["extension"] as? String ?: "java",
+                                    template = slotMap["template"] as? String ?: "",
+                                    enabledByDefault = slotMap["enabledByDefault"] as? Boolean ?: true,
+                                )
+                            }.toMutableList()
+                        }
+                    }
+                    return normalize(config)
+                }
+            }.onFailure { thisLogger().warn("Cag: falha ao ler ${path}, usando default.", it) }
         }
         val default = defaultConfig()
         if (path != null) runCatching { save(default) }
@@ -77,9 +96,50 @@ class CagConfigService(private val project: Project) : Disposable {
     }
 
     private fun normalize(config: CagConfig): CagConfig {
-        if (config.slots.isEmpty()) return defaultConfig()
-        config.slots.forEach { if (it.extension.isBlank()) it.extension = "java" }
+        // Migrar slots legados para modules
+        if (config.hasLegacySlots()) {
+            migrateLegacySlots(config)
+        }
+
+        // Se ainda não tem modules, usar default
+        if (config.modules.isEmpty()) return defaultConfig()
+
+        // Normalizar extensions
+        config.modules.forEach { module ->
+            module.slots.forEach { slot ->
+                if (slot.extension.isBlank()) slot.extension = "java"
+            }
+        }
         return config
+    }
+
+    private fun migrateLegacySlots(config: CagConfig) {
+        val moduleMap = linkedMapOf<String, MutableList<SlotConfig>>()
+
+        for (slot in config.legacySlots) {
+            val folder = slot.subfolder // subfolder contains the old folder value
+            val parts = folder.split("/", limit = 2)
+            val moduleName = parts.firstOrNull() ?: "Default"
+            val subfolder = parts.getOrNull(1) ?: ""
+
+            moduleMap.getOrPut(moduleName) { mutableListOf() }.add(
+                SlotConfig(
+                    id = slot.id,
+                    subfolder = subfolder,
+                    fileName = slot.fileName,
+                    extension = slot.extension,
+                    template = slot.template,
+                    enabledByDefault = slot.enabledByDefault,
+                )
+            )
+        }
+
+        config.modules = moduleMap.map { (name, slots) ->
+            ModuleConfig(name, slots)
+        }.toMutableList()
+        config.legacySlots.clear()
+
+        thisLogger().info("Cag: configuração legada migrada para estrutura modular")
     }
 
     private fun configPath(): Path? {
@@ -93,18 +153,23 @@ class CagConfigService(private val project: Project) : Disposable {
         fun getInstance(project: Project): CagConfigService = project.service()
 
         fun defaultConfig(): CagConfig = CagConfig(
-            version = 1,
-            architectureRoot = "",
-            slots = mutableListOf(
-                SlotConfig("model", "domain/model", "{Feature}", "java", "model"),
-                SlotConfig("useCase", "domain/ports/usecase/{feature}", "{Feature}UseCase", "java", "usecase"),
-                SlotConfig("useCaseImpl", "application/usecase/{feature}", "{Feature}UseCaseImpl", "java", "usecaseImpl"),
-                SlotConfig("controller", "infrastructure/adapter/controller", "{Feature}Controller", "java", "controller"),
-                SlotConfig("repository", "domain/ports/persistence", "{Feature}Repository", "java", "repository"),
-                SlotConfig("repositoryImpl", "infrastructure/persistence", "{Feature}RepositoryImpl", "java", "repositoryImpl"),
-                SlotConfig("entity", "infrastructure/persistence/entity", "{Feature}Entity", "java", "entity"),
-                SlotConfig("dto", "infrastructure/adapter/dto", "{Feature}Dto", "java", "dto"),
-                SlotConfig("mapper", "infrastructure/mapper", "{Feature}Mapper", "java", "mapper"),
+            version = 2,
+            modules = mutableListOf(
+                ModuleConfig("Domain", mutableListOf(
+                    SlotConfig("model", "model", "{Feature}", "java", "model"),
+                    SlotConfig("dto", "dto", "{Feature}Dto", "java", "dto"),
+                    SlotConfig("useCase", "usecase", "{Feature}UseCase", "java", "usecase"),
+                    SlotConfig("repository", "repository", "{Feature}Repository", "java", "repository"),
+                )),
+                ModuleConfig("Application", mutableListOf(
+                    SlotConfig("useCaseImpl", "usecase", "{Feature}UseCaseImpl", "java", "usecaseImpl"),
+                )),
+                ModuleConfig("Infrastructure", mutableListOf(
+                    SlotConfig("controller", "controller", "{Feature}Controller", "java", "controller"),
+                    SlotConfig("repositoryImpl", "repository", "{Feature}RepositoryImpl", "java", "repositoryImpl"),
+                    SlotConfig("entity", "entity", "{Feature}Entity", "java", "entity"),
+                    SlotConfig("mapper", "mapper", "{Feature}Mapper", "java", "mapper"),
+                )),
             ),
         )
     }

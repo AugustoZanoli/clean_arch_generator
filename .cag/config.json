@@ -1,54 +1,93 @@
 {
-  "version": 1,
+  "version": 2,
   "architectureRoot": "",
-  "slots": [
+  "modules": [
     {
-      "id": "dto",
-      "folder": "domain/models",
-      "fileName": "{Feature}Dto",
-      "extension": "java",
-      "template": "dto",
-      "enabledByDefault": true
+      "name": "Domain",
+      "slots": [
+        {
+          "id": "model",
+          "subfolder": "model",
+          "fileName": "{Feature}",
+          "extension": "java",
+          "template": "model",
+          "enabledByDefault": true
+        },
+        {
+          "id": "dto",
+          "subfolder": "dto",
+          "fileName": "{Feature}Dto",
+          "extension": "java",
+          "template": "dto",
+          "enabledByDefault": true
+        },
+        {
+          "id": "useCase",
+          "subfolder": "usecase",
+          "fileName": "{Feature}UseCase",
+          "extension": "java",
+          "template": "usecase",
+          "enabledByDefault": true
+        },
+        {
+          "id": "repository",
+          "subfolder": "repository",
+          "fileName": "{Feature}Repository",
+          "extension": "java",
+          "template": "repository",
+          "enabledByDefault": true
+        }
+      ]
     },
     {
-      "id": "useCase",
-      "folder": "domain/useCases",
-      "fileName": "{Feature}UseCase",
-      "extension": "java",
-      "template": "usecase",
-      "enabledByDefault": true
+      "name": "Application",
+      "slots": [
+        {
+          "id": "useCaseImpl",
+          "subfolder": "usecase",
+          "fileName": "{Feature}UseCaseImpl",
+          "extension": "java",
+          "template": "usecaseImpl",
+          "enabledByDefault": true
+        }
+      ]
     },
     {
-      "id": "useCaseImpl",
-      "folder": "application",
-      "fileName": "{Feature}UseCaseImpl",
-      "extension": "java",
-      "template": "usecaseImpl",
-      "enabledByDefault": true
-    },
-    {
-      "id": "controller",
-      "folder": "infrastructure/controller",
-      "fileName": "{Feature}Controller",
-      "extension": "java",
-      "template": "controller",
-      "enabledByDefault": true
-    },
-    {
-      "id": "entity",
-      "folder": "infrastructure/persistence/entitys",
-      "fileName": "{Feature}Entity",
-      "extension": "java",
-      "template": "entity",
-      "enabledByDefault": true
-    },
-    {
-      "id": "repository",
-      "folder": "infrastructure/repository",
-      "fileName": "{Feature}Repository",
-      "extension": "java",
-      "template": "repository",
-      "enabledByDefault": true
+      "name": "Infrastructure",
+      "slots": [
+        {
+          "id": "controller",
+          "subfolder": "controller",
+          "fileName": "{Feature}Controller",
+          "extension": "java",
+          "template": "controller",
+          "enabledByDefault": true
+        },
+        {
+          "id": "repositoryImpl",
+          "subfolder": "repository",
+          "fileName": "{Feature}RepositoryImpl",
+          "extension": "java",
+          "template": "repositoryImpl",
+          "enabledByDefault": true
+        },
+        {
+          "id": "entity",
+          "subfolder": "entity",
+          "fileName": "{Feature}Entity",
+          "extension": "java",
+          "template": "entity",
+          "enabledByDefault": true
+        },
+        {
+          "id": "mapper",
+          "subfolder": "mapper",
+          "fileName": "{Feature}Mapper",
+          "extension": "java",
+          "template": "mapper",
+          "enabledByDefault": true
+        }
+      ]
     }
   ]
 }

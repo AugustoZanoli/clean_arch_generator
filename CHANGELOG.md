@@ -4,8 +4,12 @@
 
 ## [Unreleased]
 
-## [1.0.1]
+## [1.1.0]
 ### Changed
+- Estrutura de configuração migrada de slots flat para módulos hierárquicos
+- Campo `folder` substituído por `module.name` + `subfolder`
+- UI de configuração reestruturada com dois painéis (módulos à esquerda, slots à direita)
+- Architecture root auto-detection agora usa nomes dos módulos
 - Cache de templates embutidos para evitar leituras repetidas do disco
 - Substituição de `isAncestor` custom por `VfsUtil.isAncestor()` do IntelliJ SDK
 - Extração de `STANDARD_PACKAGES` para constante compartilhada no `ArchitectureResolver`
@@ -14,9 +18,14 @@
 - Uso de `buildMap` (idiomatic Kotlin) em `PlanBuilder.nameVars`
 
 ### Added
+- Data class `ModuleConfig` para representar módulos na configuração
+- Método `flattenSlots()` para compatibilidade interna
+- Migração automática de configs legados (formato anterior para módulos)
+- Teste `testFlattenSlotsReturnsAllSlotsWithModuleName`
 - Templates `model.template` e `mapper.template` (antes usavam fallback genérico)
 
 ### Removed
+- Campo `folder` do `SlotConfig` (substituído por `subfolder` + `moduleName` computado)
 - Comentários desnecessários em todos os arquivos fonte
 - Código morto e imports redundantes
 

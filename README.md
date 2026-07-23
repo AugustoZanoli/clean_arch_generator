@@ -60,15 +60,20 @@ Example:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "architectureRoot": "",
-  "slots": [
+  "modules": [
     {
-      "id": "model",
-      "folder": "domain/model",
-      "fileName": "{Feature}",
-      "extension": "java",
-      "template": "model"
+      "name": "Domain",
+      "slots": [
+        {
+          "id": "model",
+          "subfolder": "model",
+          "fileName": "{Feature}",
+          "extension": "java",
+          "template": "model"
+        }
+      ]
     }
   ]
 }
@@ -80,6 +85,34 @@ Then:
 2. Enter the feature name.
 3. Review the preview.
 4. Generate.
+
+---
+
+## 📦 Module Structure
+
+The configuration uses a modular structure where each module (Domain, Application, Infrastructure, etc.) contains its slots:
+
+```json
+{
+  "modules": [
+    {
+      "name": "Domain",
+      "slots": [
+        { "id": "model", "subfolder": "model", "fileName": "{Feature}", "template": "model" },
+        { "id": "repository", "subfolder": "repository", "fileName": "{Feature}Repository", "template": "repository" }
+      ]
+    },
+    {
+      "name": "Infrastructure",
+      "slots": [
+        { "id": "controller", "subfolder": "controller", "fileName": "{Feature}Controller", "template": "controller" }
+      ]
+    }
+  ]
+}
+```
+
+The folder path is automatically constructed as `{module.name}/{slot.subfolder}`. For example, a slot with `module.name = "Domain"` and `subfolder = "model"` will generate files in `Domain/model/`.
 
 ---
 
@@ -136,6 +169,46 @@ This allows every project to have its own generation strategy.
 - [ ] Template editor
 - [ ] Import / Export configurations
 - [ ] Marketplace template packs
+
+---
+
+## 📋 Versions
+
+### 1.1.0
+
+Estrutura de configuração migrada para módulos hierárquicos e otimizações de performance.
+
+**Novidades:**
+- Estrutura de configuração modular (módulos + slots)
+- UI de configuração reestruturada com dois painéis
+- Migração automática de configs legados
+- Templates `model.template` e `mapper.template`
+
+**Alterado:**
+- Campo `folder` substituído por `module.name` + `subfolder`
+- Architecture root auto-detection usa nomes dos módulos
+- Cache de templates embutidos
+- Substituição de `isAncestor` custom por `VfsUtil.isAncestor()` do IntelliJ SDK
+- Uso de `buildMap` (idiomatic Kotlin)
+
+**Removido:**
+- Campo `folder` do `SlotConfig`
+- Comentários desnecessários e código morto
+
+---
+
+### 1.0.0
+
+Versão inicial — geração automatizada de features seguindo Clean Architecture.
+
+**Funcionalidades:**
+- Geração automática de arquivos seguindo Clean Architecture
+- Suporte a projetos multi-módulo com seleção de módulo
+- Preview interativo antes da geração dos arquivos
+- Templates customizáveis via `.cag/templates/`
+- Resolução automática de packages e imports
+- Referências cruzadas entre slots via `{fqn.<id>}`, `{class.<id>}`, `{package.<id>}`
+- Configuração centralizada em `.cag/config.json`
 
 ---
 
