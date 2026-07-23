@@ -51,8 +51,8 @@ class FeatureGenerationTest : BasePlatformTestCase() {
         assertEquals(0, FeatureGenerator(project).generate(plan2).size)
     }
 
+    @Suppress("DEPRECATION")
     fun testResolveWithSelectedModule() {
-        // Usa o source root do fixture de teste como "módulo"
         val sourceRoot = project.baseDir
         val config = CagConfigService.defaultConfig()
 

@@ -5,10 +5,6 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 
-/**
- * Ação que abre a janela flutuante de geração de feature.
- * Registrada com atalho e ícone no plugin.xml.
- */
 class GenerateFeatureAction : AnAction() {
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT

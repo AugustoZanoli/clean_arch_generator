@@ -4,6 +4,22 @@
 
 ## [Unreleased]
 
+## [1.0.1]
+### Changed
+- Cache de templates embutidos para evitar leituras repetidas do disco
+- Substituição de `isAncestor` custom por `VfsUtil.isAncestor()` do IntelliJ SDK
+- Extração de `STANDARD_PACKAGES` para constante compartilhada no `ArchitectureResolver`
+- Deduplicação da computação de `nameVars` no `PlanBuilder`
+- Abertura de arquivos no editor movida para fora de `WriteCommandAction`
+- Uso de `buildMap` (idiomatic Kotlin) em `PlanBuilder.nameVars`
+
+### Added
+- Templates `model.template` e `mapper.template` (antes usavam fallback genérico)
+
+### Removed
+- Comentários desnecessários em todos os arquivos fonte
+- Código morto e imports redundantes
+
 ## [1.0.0]
 ### Added
 - Geração automática de arquivos seguindo Clean Architecture

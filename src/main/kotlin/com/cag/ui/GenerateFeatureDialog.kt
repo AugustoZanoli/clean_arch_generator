@@ -32,10 +32,6 @@ import javax.swing.JPanel
 import javax.swing.event.DocumentEvent
 import javax.swing.tree.DefaultTreeModel
 
-/**
- * Janela flutuante de geração: campo com o nome da feature + árvore de preview com checkboxes.
- * O preview é reconstruído a cada tecla; ao confirmar, gera os arquivos marcados.
- */
 class GenerateFeatureDialog(
     private val project: Project,
     private val context: VirtualFile?,
@@ -48,7 +44,6 @@ class GenerateFeatureDialog(
     private val tree = CheckboxTree(
         PreviewRenderer(),
         rootNode,
-        // Marcar/desmarcar uma pasta propaga para os arquivos; alterar um arquivo não mexe na pasta.
         CheckboxTreeBase.CheckPolicy(true, true, false, false),
     )
     private val treeModel = tree.model as DefaultTreeModel
@@ -145,7 +140,6 @@ class GenerateFeatureDialog(
         val modules = resolver.availableModules()
         moduleField.removeAllItems()
         modules.forEach { moduleField.addItem(it) }
-        // Pré-seleciona o módulo mais próximo do contexto, ou o primeiro
         if (context != null) {
             val match = modules.firstOrNull { it.file.path == context.path }
                 ?: modules.firstOrNull { isAncestor(it.file, context) }
@@ -197,7 +191,6 @@ class GenerateFeatureDialog(
         super.doOKAction()
     }
 
-    /** Sincroniza o estado dos checkboxes de volta para os [PlannedFile] antes de gerar. */
     private fun applyCheckboxSelection(plan: FeaturePlan) {
         val checkedFiles = HashSet<PlannedFile>()
         val nodes = rootNode.depthFirstEnumeration()
@@ -208,10 +201,8 @@ class GenerateFeatureDialog(
         plan.files.forEach { it.enabled = it in checkedFiles }
     }
 
-    /** Nó de arquivo na árvore de preview. */
     private class FileNode(val plannedFile: PlannedFile) : CheckedTreeNode(plannedFile)
 
-    /** Renderer que mostra pastas/arquivos e marca os já existentes. */
     private class PreviewRenderer : CheckboxTree.CheckboxTreeCellRenderer() {
         override fun customizeRenderer(
             tree: javax.swing.JTree,

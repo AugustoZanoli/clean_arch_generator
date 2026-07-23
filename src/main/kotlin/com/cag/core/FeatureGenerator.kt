@@ -6,10 +6,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 
-/** Cria fisicamente os arquivos do plano, criando os diretórios que faltam, e os abre no editor. */
 class FeatureGenerator(private val project: Project) {
 
-    /** Retorna os arquivos efetivamente criados (ignora desabilitados e já existentes). */
     fun generate(plan: FeaturePlan): List<VirtualFile> {
         val created = mutableListOf<VirtualFile>()
 
@@ -29,8 +27,11 @@ class FeatureGenerator(private val project: Project) {
             }
         })
 
-        val editorManager = FileEditorManager.getInstance(project)
-        created.forEachIndexed { index, file -> editorManager.openFile(file, index == created.lastIndex) }
+        if (created.isNotEmpty()) {
+            val editorManager = FileEditorManager.getInstance(project)
+            created.forEachIndexed { index, file -> editorManager.openFile(file, index == created.lastIndex) }
+        }
+
         return created
     }
 }

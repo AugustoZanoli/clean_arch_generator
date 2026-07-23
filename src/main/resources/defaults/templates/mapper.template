@@ -1,0 +1,11 @@
+package {package};
+
+import {fqn.model};
+
+public class {Feature}Mapper {
+
+    public {class.model} toModel(Object source) {
+        // TODO: implementar mapeamento de {Feature}
+        return new {class.model}();
+    }
+}

@@ -7,12 +7,12 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 
 /**
- * Carrega o conteúdo bruto de um template, na ordem de precedência:
- * 1. `.cag/templates/<nome>.template` no projeto (permite customização por equipe);
- * 2. template default embutido no plugin (`/defaults/templates/<nome>.template`);
- * 3. fallback mínimo gerado em código (classe/ interface vazia), se nada for encontrado.
+ * Carrega templates com cache para evitar leituras repetidas do disco.
+ * Prioridade: projeto > embutido > fallback em código.
  */
 object TemplateLoader {
+
+    private val bundledCache = HashMap<String, String>()
 
     fun load(project: Project, templateName: String, extension: String): String {
         projectTemplate(project, templateName)?.let { return it }
@@ -27,8 +27,10 @@ object TemplateLoader {
     }
 
     private fun bundledTemplate(templateName: String): String? =
-        javaClass.getResourceAsStream("/defaults/templates/$templateName.template")
-            ?.bufferedReader()?.use { it.readText() }
+        bundledCache.getOrPut(templateName) {
+            javaClass.getResourceAsStream("/defaults/templates/$templateName.template")
+                ?.bufferedReader()?.use { it.readText() } ?: return null
+        }
 
     private fun fallback(extension: String): String = when (extension.lowercase()) {
         "kt" -> "package {package}\n\nclass {Feature} {\n}\n"

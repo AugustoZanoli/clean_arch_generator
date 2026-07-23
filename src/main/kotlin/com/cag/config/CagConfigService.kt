@@ -11,11 +11,6 @@ import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 
-/**
- * Serviço de projeto responsável por carregar, cachear e salvar o `.cag/config.json`.
- * Cria uma configuração default (a arquitetura de exemplo) na primeira vez que é lido,
- * se o arquivo ainda não existir.
- */
 @Service(Service.Level.PROJECT)
 class CagConfigService(private val project: Project) : Disposable {
 
@@ -26,16 +21,11 @@ class CagConfigService(private val project: Project) : Disposable {
     private var cached: CagConfig? = null
 
     init {
-        val path = configPath()
-        if (path != null && path.exists()) {
-            lastModified = path.toFile().lastModified()
+        configPath()?.let { path ->
+            if (path.exists()) lastModified = path.toFile().lastModified()
         }
     }
 
-    /**
-     * Verifica se o arquivo de configuração foi modificado externamente e recarrega se necessário.
-     * Deve ser chamado antes de cada getConfig() para garantir que mudanças manuais no .json sejam detectadas.
-     */
     fun checkAndReload() {
         val path = configPath() ?: return
         if (!path.exists()) return
@@ -44,11 +34,10 @@ class CagConfigService(private val project: Project) : Disposable {
         if (currentModified > lastModified) {
             thisLogger().info("Cag: arquivo de configuração alterado externamente, recarregando...")
             lastModified = currentModified
-            reload()
+            cached = null
         }
     }
 
-    /** Retorna a config, carregando do disco (ou default) na primeira chamada. */
     fun getConfig(): CagConfig {
         checkAndReload()
         cached?.let { return it }
@@ -60,12 +49,10 @@ class CagConfigService(private val project: Project) : Disposable {
         }
     }
 
-    /** Força releitura do arquivo no próximo [getConfig]. */
     fun reload() {
         cached = null
     }
 
-    /** Persiste a config no `.cag/config.json` e atualiza o cache. */
     fun save(config: CagConfig) {
         val path = configPath() ?: run {
             thisLogger().warn("Cag: projeto sem basePath; config não pôde ser salva.")
@@ -84,13 +71,11 @@ class CagConfigService(private val project: Project) : Disposable {
                 .onSuccess { if (it != null) return normalize(it) }
                 .onFailure { thisLogger().warn("Cag: falha ao ler ${path}, usando default.", it) }
         }
-        // Arquivo ausente/ inválido: cria o default no disco e retorna.
         val default = defaultConfig()
         if (path != null) runCatching { save(default) }
         return default
     }
 
-    /** Garante campos mínimos válidos após desserialização. */
     private fun normalize(config: CagConfig): CagConfig {
         if (config.slots.isEmpty()) return defaultConfig()
         config.slots.forEach { if (it.extension.isBlank()) it.extension = "java" }
@@ -102,14 +87,11 @@ class CagConfigService(private val project: Project) : Disposable {
         return Path.of(base, CagConfig.CONFIG_DIR, CagConfig.CONFIG_FILE)
     }
 
-    override fun dispose() {
-        // Nada a limpar, o serviço é gerenciado pelo container de projeto
-    }
+    override fun dispose() {}
 
     companion object {
         fun getInstance(project: Project): CagConfigService = project.service()
 
-        /** Configuração default embutida (a arquitetura clean de exemplo). */
         fun defaultConfig(): CagConfig = CagConfig(
             version = 1,
             architectureRoot = "",

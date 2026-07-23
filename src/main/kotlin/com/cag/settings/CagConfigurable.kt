@@ -16,10 +16,6 @@ import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-/**
- * Tela em Settings → Tools → Cag para editar visualmente o `.cag/config.json`.
- * Fonte da verdade continua sendo o arquivo; esta tela apenas o lê e reescreve.
- */
 class CagConfigurable(private val project: Project) : Configurable {
 
     private val architectureRootField = JBTextField()
@@ -77,7 +73,6 @@ class CagConfigurable(private val project: Project) : Configurable {
         slots = tableModel.items.map { it.copy() }.toMutableList(),
     )
 
-    /** Coluna editável ligada a uma propriedade String mutável do [SlotConfig]. */
     private class StringColumn(
         name: String,
         private val prop: (SlotConfig) -> kotlin.reflect.KMutableProperty0<String>,
@@ -89,7 +84,6 @@ class CagConfigurable(private val project: Project) : Configurable {
         }
     }
 
-    /** Coluna editável (checkbox) ligada a uma propriedade Boolean mutável do [SlotConfig]. */
     private class BooleanColumn(
         name: String,
         private val prop: (SlotConfig) -> kotlin.reflect.KMutableProperty0<Boolean>,
