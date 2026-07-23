@@ -1,6 +1,7 @@
 package com.cag.config
 
 import com.google.gson.GsonBuilder
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
@@ -16,15 +17,40 @@ import kotlin.io.path.readText
  * se o arquivo ainda não existir.
  */
 @Service(Service.Level.PROJECT)
-class CagConfigService(private val project: Project) {
+class CagConfigService(private val project: Project) : Disposable {
 
     private val gson = GsonBuilder().setPrettyPrinting().create()
+    private var lastModified: Long = 0
 
     @Volatile
     private var cached: CagConfig? = null
 
+    init {
+        val path = configPath()
+        if (path != null && path.exists()) {
+            lastModified = path.toFile().lastModified()
+        }
+    }
+
+    /**
+     * Verifica se o arquivo de configuração foi modificado externamente e recarrega se necessário.
+     * Deve ser chamado antes de cada getConfig() para garantir que mudanças manuais no .json sejam detectadas.
+     */
+    fun checkAndReload() {
+        val path = configPath() ?: return
+        if (!path.exists()) return
+
+        val currentModified = path.toFile().lastModified()
+        if (currentModified > lastModified) {
+            thisLogger().info("Cag: arquivo de configuração alterado externamente, recarregando...")
+            lastModified = currentModified
+            reload()
+        }
+    }
+
     /** Retorna a config, carregando do disco (ou default) na primeira chamada. */
     fun getConfig(): CagConfig {
+        checkAndReload()
         cached?.let { return it }
         synchronized(this) {
             cached?.let { return it }
@@ -47,6 +73,7 @@ class CagConfigService(private val project: Project) {
         }
         Files.createDirectories(path.parent)
         Files.writeString(path, gson.toJson(config))
+        lastModified = path.toFile().lastModified()
         cached = config.copyDeep()
     }
 
@@ -73,6 +100,10 @@ class CagConfigService(private val project: Project) {
     private fun configPath(): Path? {
         val base = project.basePath ?: return null
         return Path.of(base, CagConfig.CONFIG_DIR, CagConfig.CONFIG_FILE)
+    }
+
+    override fun dispose() {
+        // Nada a limpar, o serviço é gerenciado pelo container de projeto
     }
 
     companion object {
