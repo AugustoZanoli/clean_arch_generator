@@ -2,3 +2,5 @@
 .idea
 .intellijPlatform
 build
+*.md
+.cag/

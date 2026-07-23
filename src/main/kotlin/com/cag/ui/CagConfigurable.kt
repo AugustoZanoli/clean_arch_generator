@@ -1,4 +1,4 @@
-package com.cag.settings
+package com.cag.ui
 
 import com.cag.config.CagConfig
 import com.cag.config.CagConfigService

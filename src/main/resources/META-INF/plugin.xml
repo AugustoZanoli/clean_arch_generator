@@ -29,16 +29,13 @@
     <extensions defaultExtensionNs="com.intellij">
         <projectConfigurable
                 parentId="tools"
-                instance="com.cag.settings.CagConfigurable"
-                id="com.cag.settings.CagConfigurable"
+                instance="com.cag.ui.CagConfigurable"
+                id="com.cag.ui.CagConfigurable"
                 displayName="Cag — Clean Architecture Generator"/>
+        <postStartupActivity implementation="com.cag.config.CagConfigInitializer"/>
     </extensions>
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <supportsKotlinPluginMode supportsK2="true" />
-    </extensions>
-
-    <extensions defaultExtensionNs="com.intellij">
-        <postStartupActivity implementation="com.cag.config.CagConfigInitializer"/>
     </extensions>
 
     <actions>
