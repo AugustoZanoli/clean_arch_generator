@@ -20,8 +20,21 @@
         • Preview interativo antes da geração<br>
         • Templates customizáveis por projeto<br>
         • Resolução automática de packages e imports<br>
+        • Múltiplos perfis de configuração<br>
+        • Parse automático de campos para templates<br>
         • Compatível com Kotlin 2 (K2)
         ]]></description>
+
+    <change-notes><![CDATA[
+        <b>1.2.0</b><br>
+        <ul>
+            <li>Suporte a múltiplos perfis de configuração (feature.json, modulo.json, etc.)</li>
+            <li>Parse automático de campos de classes existentes para templates ({fields.slotId}, {assigns.slotId})</li>
+            <li>Dropdown de seleção de perfil no dialog de geração</li>
+            <li>Gerenciamento de perfis no settings</li>
+            <li>Otimizações de performance no PlanBuilder e CagConfigService</li>
+        </ul>
+    ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>org.jetbrains.kotlin</depends>

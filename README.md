@@ -20,6 +20,8 @@ CAG is an IntelliJ IDEA plugin that scaffolds files, packages and modules follow
 - 📂 Automatic package resolution
 - 🔗 Cross-template references
 - ⚙️ Project-specific configuration
+- 🎯 Multiple configuration profiles
+- 🔄 Automatic field parsing for templates
 - 💡 Native IntelliJ IDEA integration
 
 ---
@@ -116,11 +118,59 @@ The folder path is automatically constructed as `{module.name}/{slot.subfolder}`
 
 ---
 
+## 🎯 Multiple Configuration Profiles
+
+Support multiple configuration files in `.cag/` directory. Each `.json` file (except `config.json`) becomes a selectable profile.
+
+```
+.cag/
+├── config.json       ← default/fallback
+├── feature.json      ← profile "Feature"
+├── modulo.json       ← profile "Modulo"
+└── templates/
+    └── ...
+```
+
+When generating, select which profile to use from the dropdown.
+
+---
+
+## 🔄 Automatic Field Parsing
+
+Templates can reference fields from existing classes using `{fields.<slotId>}` and `{assigns.<slotId>}`.
+
+**Available variables:**
+- `{fields.<slotId>}` — Field declarations (e.g., `private String name;`)
+- `{assigns.<slotId>}` — Assignment statements (e.g., `result.setName(source.getName());`)
+
+**Example mapper template:**
+```java
+public {class.model} toModel({class.entity} entity) {
+    {class.model} result = new {class.model}();
+{assigns.entity}
+    return result;
+}
+```
+
+If the Entity has fields `id` and `name`, generates:
+```java
+public User toModel(UserEntity entity) {
+    User result = new User();
+    result.setId(entity.getId());
+    result.setName(entity.getName());
+    return result;
+}
+```
+
+---
+
 ## 📁 Project Structure
 
 ```
 .cag
 ├── config.json
+├── feature.json
+├── modulo.json
 └── templates
     ├── entity.template
     ├── repository.template
@@ -143,6 +193,8 @@ The folder path is automatically constructed as `{module.name}/{slot.subfolder}`
 | `{class.<id>}` | User |
 | `{package.<id>}` | com.example.domain.model |
 | `{fqn.<id>}` | com.example.domain.model.User |
+| `{fields.<id>}` | private Long id; private String name; |
+| `{assigns.<id>}` | result.setId(entity.getId()); |
 
 ---
 
@@ -164,8 +216,9 @@ This allows every project to have its own generation strategy.
 - [x] Template engine
 - [x] Interactive preview
 - [x] Cross-template references
+- [x] Multiple configuration profiles
+- [x] Automatic field parsing
 - [ ] Kotlin support
-- [ ] Architecture presets
 - [ ] Template editor
 - [ ] Import / Export configurations
 - [ ] Marketplace template packs
@@ -173,6 +226,25 @@ This allows every project to have its own generation strategy.
 ---
 
 ## 📋 Versions
+
+### 1.2.0
+
+Múltiplos perfis de configuração e parse automático de campos para templates.
+
+**Novidades:**
+- Suporte a múltiplos perfis de configuração (feature.json, modulo.json, etc.)
+- Parse automático de campos de classes existentes para templates
+- Variáveis `{fields.<slotId>}` e `{assigns.<slotId>}` para templates
+- Dropdown de seleção de perfil no dialog de geração
+- Gerenciamento de perfis no settings
+- Template de exemplo mapper.template com mapeamento automático
+
+**Otimizações:**
+- Parse JSON single-pass no CagConfigService
+- Consolidação de loops no PlanBuilder
+- Reutilização de ArchitectureResolver no dialog
+
+---
 
 ### 1.1.0
 

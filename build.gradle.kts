@@ -19,3 +19,5 @@ dependencies {
         bundledPlugin("com.intellij.properties")
     }
 }
+
+

@@ -4,6 +4,23 @@
 
 ## [Unreleased]
 
+## [1.2.0]
+### Added
+- Suporte a múltiplos perfis de configuração (arquivos .json em .cag/)
+- Dropdown de seleção de perfil no dialog de geração
+- Gerenciamento de perfis no settings (criar, editar, selecionar)
+- Parse automático de campos de classes existentes para templates
+- Variáveis `{fields.<slotId>}` e `{assigns.<slotId>}` para templates
+- Template de exemplo mapper.template com mapeamento automático
+- README de referência de variáveis em .cag/templates/
+
+### Changed
+- Otimização do parse JSON em CagConfigService (single parse)
+- Consolidação de loops em PlanBuilder.build()
+- Reutilização de ArchitectureResolver no GenerateFeatureDialog
+- Atualização da descrição do plugin no plugin.xml
+- Adicionado change-notes no plugin.xml para Marketplace
+
 ## [1.1.0]
 ### Changed
 - Estrutura de configuração migrada de slots flat para módulos hierárquicos

@@ -121,10 +121,10 @@ class CagConfigService(private val project: Project) : Disposable {
     private fun loadFromPath(path: Path): CagConfig {
         runCatching {
             val json = path.readText()
+            val jsonObj = gson.fromJson(json, Map::class.java) ?: return defaultConfig()
             val config = gson.fromJson(json, CagConfig::class.java)
             if (config != null) {
-                val jsonObj = gson.fromJson(json, Map::class.java)
-                if (jsonObj?.containsKey("slots") == true && !jsonObj.containsKey("modules")) {
+                if (jsonObj.containsKey("slots") && !jsonObj.containsKey("modules")) {
                     @Suppress("UNCHECKED_CAST")
                     val legacySlots = jsonObj["slots"] as? List<Map<String, Any>>
                     if (legacySlots != null) {

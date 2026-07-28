@@ -51,6 +51,7 @@ class GenerateFeatureDialog(
     )
     private val treeModel = tree.model as DefaultTreeModel
 
+    private val resolver = ArchitectureResolver(project)
     private var currentPlan: FeaturePlan? = null
 
     init {
@@ -152,7 +153,6 @@ class GenerateFeatureDialog(
         val raw = nameField.text
         if (raw.isBlank()) return null
         val config = resolveConfig()
-        val resolver = ArchitectureResolver(project)
         val selectedModuleItem = moduleField.selectedItem as? ModuleItem
         val selectedModule = selectedModuleItem?.file
         val featureSnake = NameVariants(raw).snake
@@ -178,7 +178,6 @@ class GenerateFeatureDialog(
     }
 
     private fun populateModuleComboBox() {
-        val resolver = ArchitectureResolver(project)
         val modules = resolver.availableModules()
         moduleField.removeAllItems()
         modules.forEach { moduleField.addItem(it) }
