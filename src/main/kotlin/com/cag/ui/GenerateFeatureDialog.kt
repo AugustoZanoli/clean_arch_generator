@@ -1,6 +1,8 @@
 package com.cag.ui
 
+import com.cag.config.CagConfig
 import com.cag.config.CagConfigService
+import com.cag.config.ConfigProfile
 import com.cag.core.ArchitectureResolver
 import com.cag.core.FeaturePlan
 import com.cag.core.ModuleItem
@@ -38,6 +40,7 @@ class GenerateFeatureDialog(
 ) : DialogWrapper(project) {
 
     private val nameField = JBTextField()
+    private val profileField = ComboBox<ConfigProfile>()
     private val moduleField = ComboBox<ModuleItem>()
     private val statusLabel = JBLabel(" ")
     private val rootNode = CheckedTreeNode("root")
@@ -56,6 +59,19 @@ class GenerateFeatureDialog(
         nameField.document.addDocumentListener(object : DocumentAdapter() {
             override fun textChanged(e: DocumentEvent) = refreshPreview()
         })
+        profileField.renderer = object : SimpleListCellRenderer<ConfigProfile>() {
+            override fun customize(
+                list: javax.swing.JList<out ConfigProfile>,
+                value: ConfigProfile?,
+                index: Int,
+                selected: Boolean,
+                hasFocus: Boolean,
+            ) {
+                text = value?.displayName ?: "Default"
+            }
+        }
+        populateProfileComboBox()
+        profileField.addActionListener { refreshPreview() }
         moduleField.renderer = object : SimpleListCellRenderer<ModuleItem>() {
             override fun customize(
                 list: javax.swing.JList<out ModuleItem>,
@@ -79,6 +95,11 @@ class GenerateFeatureDialog(
     override fun getPreferredFocusedComponent(): JComponent = nameField
 
     override fun createCenterPanel(): JComponent {
+        val profileRow = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
+            add(JBLabel("Configuração:"), BorderLayout.WEST)
+            add(profileField, BorderLayout.CENTER)
+        }
+
         val moduleRow = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
             add(JBLabel("Módulo:"), BorderLayout.WEST)
             add(moduleField, BorderLayout.CENTER)
@@ -90,8 +111,12 @@ class GenerateFeatureDialog(
         }
 
         val north = JPanel(BorderLayout(0, JBUI.scale(4))).apply {
-            add(moduleRow, BorderLayout.NORTH)
-            add(featureRow, BorderLayout.SOUTH)
+            add(profileRow, BorderLayout.NORTH)
+            val centerPanel = JPanel(BorderLayout(0, JBUI.scale(4))).apply {
+                add(moduleRow, BorderLayout.NORTH)
+                add(featureRow, BorderLayout.SOUTH)
+            }
+            add(centerPanel, BorderLayout.CENTER)
         }
 
         val scroll = com.intellij.ui.ScrollPaneFactory.createScrollPane(tree).apply {
@@ -126,13 +151,30 @@ class GenerateFeatureDialog(
     private fun computePlan(): FeaturePlan? {
         val raw = nameField.text
         if (raw.isBlank()) return null
-        val config = CagConfigService.getInstance(project).getConfig()
+        val config = resolveConfig()
         val resolver = ArchitectureResolver(project)
         val selectedModuleItem = moduleField.selectedItem as? ModuleItem
         val selectedModule = selectedModuleItem?.file
         val featureSnake = NameVariants(raw).snake
         val arch = resolver.resolve(config, context, selectedModule, featureSnake) ?: return null
         return PlanBuilder(project).build(raw, config, arch)
+    }
+
+    private fun resolveConfig(): CagConfig {
+        val service = CagConfigService.getInstance(project)
+        val selectedProfile = profileField.selectedItem as? ConfigProfile
+        return if (selectedProfile != null) {
+            service.getProfile(selectedProfile.name)
+        } else {
+            service.getConfig()
+        }
+    }
+
+    private fun populateProfileComboBox() {
+        val service = CagConfigService.getInstance(project)
+        val profiles = service.discoverProfiles()
+        profileField.removeAllItems()
+        profiles.forEach { profileField.addItem(it) }
     }
 
     private fun populateModuleComboBox() {

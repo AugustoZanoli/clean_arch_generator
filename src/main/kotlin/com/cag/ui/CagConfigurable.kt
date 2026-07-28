@@ -2,10 +2,13 @@ package com.cag.ui
 
 import com.cag.config.CagConfig
 import com.cag.config.CagConfigService
+import com.cag.config.ConfigProfile
 import com.cag.config.ModuleConfig
 import com.cag.config.SlotConfig
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.ComboBox
+import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
@@ -14,6 +17,7 @@ import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.ListTableModel
 import java.awt.BorderLayout
+import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JSplitPane
@@ -21,6 +25,9 @@ import javax.swing.ListSelectionModel
 
 class CagConfigurable(private val project: Project) : Configurable {
 
+    private val profileField = ComboBox<ConfigProfile>()
+    private val newProfileField = JBTextField(12)
+    private val addProfileButton = JButton("Adicionar")
     private val architectureRootField = JBTextField()
 
     // Módulos
@@ -45,7 +52,22 @@ class CagConfigurable(private val project: Project) : Configurable {
 
     private var currentModules = mutableListOf<ModuleConfig>()
 
+    private var currentProfileName: String? = null // null = Default (config.json)
+
     init {
+        profileField.renderer = object : SimpleListCellRenderer<ConfigProfile>() {
+            override fun customize(
+                list: javax.swing.JList<out ConfigProfile>,
+                value: ConfigProfile?,
+                index: Int,
+                selected: Boolean,
+                hasFocus: Boolean,
+            ) {
+                text = value?.displayName ?: "Default"
+            }
+        }
+        profileField.addActionListener { onProfileChanged() }
+        addProfileButton.addActionListener { onAddProfile() }
         moduleTable.selectionModel.addListSelectionListener {
             if (!it.valueIsAdjusting) {
                 onModuleSelectionChanged()
@@ -56,9 +78,24 @@ class CagConfigurable(private val project: Project) : Configurable {
     override fun getDisplayName(): String = "Cag — Clean Architecture Generator"
 
     override fun createComponent(): JComponent {
-        val north = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
+        val profileRow = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
+            add(JBLabel("Perfil:"), BorderLayout.WEST)
+            add(profileField, BorderLayout.CENTER)
+            val newProfilePanel = JPanel(BorderLayout(JBUI.scale(4), 0)).apply {
+                add(newProfileField, BorderLayout.CENTER)
+                add(addProfileButton, BorderLayout.EAST)
+            }
+            add(newProfilePanel, BorderLayout.EAST)
+        }
+
+        val archRow = JPanel(BorderLayout(JBUI.scale(8), 0)).apply {
             add(JBLabel("Raiz da arquitetura (relativa ao source root; vazio = auto-detectar):"), BorderLayout.WEST)
             add(architectureRootField, BorderLayout.CENTER)
+        }
+
+        val north = JPanel(BorderLayout(0, JBUI.scale(4))).apply {
+            add(profileRow, BorderLayout.NORTH)
+            add(archRow, BorderLayout.SOUTH)
         }
 
         // Painel de módulos (esquerda)
@@ -145,16 +182,71 @@ class CagConfigurable(private val project: Project) : Configurable {
         }
     }
 
-    override fun isModified(): Boolean = uiToConfig() != CagConfigService.getInstance(project).getConfig()
+    override fun isModified(): Boolean {
+        val service = CagConfigService.getInstance(project)
+        val currentConfig = if (currentProfileName != null) {
+            service.getProfile(currentProfileName!!)
+        } else {
+            service.getConfig()
+        }
+        return uiToConfig() != currentConfig
+    }
 
     override fun apply() {
         val service = CagConfigService.getInstance(project)
-        service.save(uiToConfig())
+        val config = uiToConfig()
+        if (currentProfileName != null) {
+            service.saveProfile(currentProfileName!!, config)
+        } else {
+            service.save(config)
+        }
         service.reload()
     }
 
     override fun reset() {
-        val config = CagConfigService.getInstance(project).getConfig().copyDeep()
+        populateProfileComboBox()
+        val service = CagConfigService.getInstance(project)
+        val config = if (currentProfileName != null) {
+            service.getProfile(currentProfileName!!).copyDeep()
+        } else {
+            service.getConfig().copyDeep()
+        }
+        loadConfigIntoUI(config)
+    }
+
+    private fun populateProfileComboBox() {
+        val service = CagConfigService.getInstance(project)
+        val profiles = service.discoverProfiles()
+        profileField.removeAllItems()
+        profiles.forEach { profileField.addItem(it) }
+    }
+
+    private fun onProfileChanged() {
+        val selected = profileField.selectedItem as? ConfigProfile
+        currentProfileName = selected?.name
+        val service = CagConfigService.getInstance(project)
+        val config = if (currentProfileName != null) {
+            service.getProfile(currentProfileName!!).copyDeep()
+        } else {
+            service.getConfig().copyDeep()
+        }
+        loadConfigIntoUI(config)
+    }
+
+    private fun onAddProfile() {
+        val name = newProfileField.text.trim().lowercase()
+        if (name.isEmpty()) return
+        val service = CagConfigService.getInstance(project)
+        val profiles = service.discoverProfiles()
+        if (profiles.any { it.name == name }) return
+        service.saveProfile(name, CagConfigService.defaultConfig())
+        populateProfileComboBox()
+        val newProfile = ConfigProfile(name, name.replaceFirstChar { it.uppercase() })
+        profileField.selectedItem = newProfile
+        newProfileField.text = ""
+    }
+
+    private fun loadConfigIntoUI(config: CagConfig) {
         architectureRootField.text = config.architectureRoot
         currentModules = config.modules
         moduleTableModel.items = currentModules.toList()
