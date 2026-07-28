@@ -40,6 +40,21 @@ class PlanBuilder(private val project: Project) {
             crossRefVars["fqn.$id"] = fqn(resolved.packageName, className)
         }
 
+        // Parse fields from existing files for cross-reference
+        arch.slots.forEach { resolved ->
+            val className = classNames.getValue(resolved.slot.id)
+            val fileName = "$className.${resolved.slot.extension}"
+            val existingFile = resolved.existingBaseDir.findChild(fileName)
+            if (existingFile != null && existingFile.exists() && resolved.segmentsToCreate.isEmpty()) {
+                val fields = FieldParser.parse(existingFile)
+                if (fields.isNotEmpty()) {
+                    val id = resolved.slot.id
+                    crossRefVars["fields.$id"] = FieldParser.renderDeclarations(fields)
+                    crossRefVars["assigns.$id"] = FieldParser.renderAssignments(fields)
+                }
+            }
+        }
+
         val files = arch.slots.map { resolved ->
             val className = classNames.getValue(resolved.slot.id)
             val fileName = "$className.${resolved.slot.extension}"
